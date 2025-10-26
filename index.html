@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Feuerwehr Quickborn Drohne</title>
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet/dist/leaflet.css"
+  />
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      margin: 0;
+      background-color: #f4f4f4;
+    }
+    h1 {
+      margin: 0;
+      padding: 15px;
+      background-color: #d32f2f;
+      color: white;
+    }
+    #map {
+      height: 80vh;
+      width: 100%;
+    }
+    .status {
+      padding: 10px;
+      font-size: 1.5em;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <h1>🚒 Feuerwehr Quickborn – Drohneneinsatz</h1>
+  <div class="status" id="status">Lade Daten...</div>
+  <div id="map"></div>
+
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script>
+    const sheetUrl =
+      "https://docs.google.com/spreadsheets/d/e/2PACX-1vQbO5iG9RiKfnsdVvnMRBbcKon3qgNTQTNHExnN7_VbQ_s1RKn6D1nYswEzhGNmFgo-pTT1s0xzpX5_/pub?output=csv";
+
+    let map, circle;
+
+    async function loadData() {
+      try {
+        const response = await fetch(sheetUrl + "&_=" + Date.now());
+        const text = await response.text();
+        const rows = text.trim().split("\n").map((r) => r.split(","));
+        const [status, lat, lng, radius] = rows[1];
+
+        // Statusanzeige
+        const statusText =
+          status.trim().toLowerCase() === "aktiv"
+            ? "🟢 Drohne ist aktuell im Einsatz"
+            : "🔴 Keine Aktivität";
+        document.getElementById("status").textContent = statusText;
+
+        // Karte initialisieren oder aktualisieren
+        const latNum = Number(lat);
+        const lngNum = Number(lng);
+        const radiusNum = Number(radius);
+
+        if (!map) {
+          map = L.map("map").setView([latNum, lngNum], 13);
+          L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+            maxZoom: 18,
+            attribution: "© OpenStreetMap",
+          }).addTo(map);
+        }
+
+        if (circle) {
+          circle.remove();
+        }
+
+        circle = L.circle([latNum, lngNum], {
+          radius: radiusNum,
+          color: "red",
+          fillColor: "#f03",
+          fillOpacity: 0.2,
+        }).addTo(map);
+
+        map.setView([latNum, lngNum], 13);
+      } catch (e) {
+        document.getElementById("status").textContent =
+          "Fehler beim Laden der Daten";
+      }
+    }
+
+    loadData();
+    setInterval(loadData, 30000); // alle 30 Sekunden aktualisieren
+  </script>
+</body>
+</html>
