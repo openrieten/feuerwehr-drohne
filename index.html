@@ -36,20 +36,20 @@
 
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
   <script>
-    // Stabile CSV-Quelle deines Google-Sheets
     const sheetUrl =
-      "https://docs.google.com/spreadsheets/d/1ARpSQ484M0m_Is1vNSl609T-lb_yiEfIGy2mVmWEzjQ/gviz/tq?tqx=out:csv";
+      "https://docs.google.com/spreadsheets/d/e/2PACX-1vQbO5iG9RiKfnsdVvnMRBbcKon3qgNTQTNHExnN7_VbQ_s1RKn6D1nYswEzhGNmFgo-pTT1s0xzpX5_/pub?gid=0&single=true&output=csv";
 
     let map, circle;
 
     async function loadData() {
       try {
         const response = await fetch(sheetUrl + "&_=" + Date.now());
+        if (!response.ok) throw new Error("HTTP " + response.status);
         const text = await response.text();
         const rows = text.trim().split("\n").map(r => r.split(","));
         const [statusRaw, latRaw, lngRaw, radiusRaw] = rows[1];
 
-        // Strings bereinigen und Zahlen korrekt interpretieren
+        // Eingabewerte bereinigen
         const status = statusRaw.trim().toLowerCase();
         const lat = parseFloat(latRaw.replace(",", "."));
         const lng = parseFloat(lngRaw.replace(",", "."));
@@ -83,12 +83,12 @@
       } catch (e) {
         document.getElementById("status").textContent =
           "Fehler beim Laden der Daten";
-        console.error(e);
+        console.error("Fehler:", e);
       }
     }
 
     loadData();
-    setInterval(loadData, 5000); // alle 5 Sekunden aktualisieren
+    setInterval(loadData, 30000); // alle 30 Sekunden aktualisieren
   </script>
 </body>
 </html>
