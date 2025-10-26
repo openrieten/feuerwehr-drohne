@@ -4,10 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Feuerwehr Quickborn Drohne</title>
-  <link
-    rel="stylesheet"
-    href="https://unpkg.com/leaflet/dist/leaflet.css"
-  />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -39,8 +36,9 @@
 
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
   <script>
+    // Stabile CSV-Quelle deines Google-Sheets
     const sheetUrl =
-      "https://docs.google.com/spreadsheets/d/e/2PACX-1vQbO5iG9RiKfnsdVvnMRBbcKon3qgNTQTNHExnN7_VbQ_s1RKn6D1nYswEzhGNmFgo-pTT1s0xzpX5_/pub?output=csv";
+      "https://docs.google.com/spreadsheets/d/1ARpSQ484M0m_Is1vNSl609T-lb_yiEfIGy2mVmWEzjQ/gviz/tq?tqx=out:csv";
 
     let map, circle;
 
@@ -48,44 +46,44 @@
       try {
         const response = await fetch(sheetUrl + "&_=" + Date.now());
         const text = await response.text();
-        const rows = text.trim().split("\n").map((r) => r.split(","));
-        const [status, lat, lng, radius] = rows[1];
+        const rows = text.trim().split("\n").map(r => r.split(","));
+        const [statusRaw, latRaw, lngRaw, radiusRaw] = rows[1];
+
+        // Strings bereinigen und Zahlen korrekt interpretieren
+        const status = statusRaw.trim().toLowerCase();
+        const lat = parseFloat(latRaw.replace(",", "."));
+        const lng = parseFloat(lngRaw.replace(",", "."));
+        const radius = parseFloat(radiusRaw.replace(",", "."));
 
         // Statusanzeige
-        const statusText =
-          status.trim().toLowerCase() === "aktiv"
-            ? "🟢 Drohne ist aktuell im Einsatz"
-            : "🔴 Keine Aktivität";
-        document.getElementById("status").textContent = statusText;
+        const active = status.includes("aktiv");
+        document.getElementById("status").textContent = active
+          ? "🟢 Drohne ist aktuell im Einsatz"
+          : "🔴 Keine Aktivität";
 
         // Karte initialisieren oder aktualisieren
-        const latNum = Number(lat);
-        const lngNum = Number(lng);
-        const radiusNum = Number(radius);
-
         if (!map) {
-          map = L.map("map").setView([latNum, lngNum], 13);
+          map = L.map("map").setView([lat, lng], 13);
           L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
             maxZoom: 18,
             attribution: "© OpenStreetMap",
           }).addTo(map);
         }
 
-        if (circle) {
-          circle.remove();
-        }
+        if (circle) circle.remove();
 
-        circle = L.circle([latNum, lngNum], {
-          radius: radiusNum,
-          color: "red",
-          fillColor: "#f03",
-          fillOpacity: 0.2,
+        circle = L.circle([lat, lng], {
+          radius: radius,
+          color: active ? "green" : "red",
+          fillColor: active ? "green" : "red",
+          fillOpacity: 0.25,
         }).addTo(map);
 
-        map.setView([latNum, lngNum], 13);
+        map.setView([lat, lng], 13);
       } catch (e) {
         document.getElementById("status").textContent =
           "Fehler beim Laden der Daten";
+        console.error(e);
       }
     }
 
